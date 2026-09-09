@@ -10,6 +10,9 @@ app.use(cors());
 app.use(express.json());
 
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const roleRoutes = require('./routes/roleRoutes');
+
 
 app.get('/', (req, res) => {
     res.json({
@@ -37,7 +40,10 @@ app.get('/db-test', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/roles', roleRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

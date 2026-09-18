@@ -1,37 +1,26 @@
 const express = require('express');
+
 const authMiddleware = require('../middleware/authMiddleware');
 
 const {
-    shareFile,
-    removeFileShare,
-    getFileShares,
-    getSharedFilesForUser
-} = require('../controllers/fileShareController');
+    createFileVersion,
+    getFileVersions
+} = require('../controllers/fileVersionController');
 
 const router = express.Router();
 
-router.get(
-    '/user/:userId',
-    authMiddleware,
-    getSharedFilesForUser
-);
-
-router.get(
-    '/file/:fileId',
-    authMiddleware,
-    getFileShares
-);
-
+// Create a new file version
 router.post(
-    '/file/:fileId',
+    '/',
     authMiddleware,
-    shareFile
+    createFileVersion
 );
 
-router.delete(
-    '/file/:fileId/user/:userId',
+// Get all versions of a file
+router.get(
+    '/file/:fileId',
     authMiddleware,
-    removeFileShare
+    getFileVersions
 );
 
 module.exports = router;

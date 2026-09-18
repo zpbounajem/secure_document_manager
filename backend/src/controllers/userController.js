@@ -85,14 +85,35 @@ const getAllUsers = async (req, res) => {
 const createUser = async (req, res) => {
     try {
         const {
-            firebaseUid,
-            email,
             firstName,
             lastName,
             displayName,
-            profileImage,
-            roleId
+            profileImage
         } = req.body;
+
+        const firebaseUid = req.user.uid;
+        const email = req.user.email;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    'Firebase account does not contain an email'
+            });
+        }
+
+        const existingUser =
+            await userService.getUserByFirebaseUid(
+                firebaseUid
+            );
+
+        if (existingUser) {
+            return res.status(200).json({
+                success: true,
+                message: 'User already exists',
+                user: existingUser
+            });
+        }
 
         const user = await userService.createUser({
             firebaseUid,
@@ -101,7 +122,7 @@ const createUser = async (req, res) => {
             lastName,
             displayName,
             profileImage,
-            roleId
+            roleId: 2
         });
 
         return res.status(201).json({
@@ -111,7 +132,10 @@ const createUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Create user error:', error.message);
+        console.error(
+            'Create user error:',
+            error.message
+        );
 
         return res.status(500).json({
             success: false,

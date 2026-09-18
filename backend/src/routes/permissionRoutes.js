@@ -1,6 +1,8 @@
 const express = require('express');
-
 const authMiddleware = require('../middleware/authMiddleware');
+const authorizationMiddleware = require('../middleware/authorizationMiddleware');
+
+
 
 const {
     createPermission,
@@ -14,7 +16,11 @@ const router = express.Router();
 
 
 // Get all permissions
-router.get('/', authMiddleware, getAllPermissions);
+router.get('/', 
+    authMiddleware,
+    authorizationMiddleware('file.download'),
+    getAllPermissions
+);
 
 
 // Create permission

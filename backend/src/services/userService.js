@@ -22,7 +22,7 @@ const createUser = async ({
         ]
     );
 
-    return result[0][0];
+    return result[0][0] || null;
 };
 
 const getUserById = async (userId) => {

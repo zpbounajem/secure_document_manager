@@ -25,7 +25,6 @@ CREATE TABLE roles (
 -- ============================================================
 -- 2. USERS
 -- ============================================================
-
 CREATE TABLE users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
@@ -49,6 +48,12 @@ CREATE TABLE users (
         'suspended'
     ) NOT NULL DEFAULT 'active',
 
+    verification_code VARCHAR(6) NULL,
+
+    verification_code_expires_at DATETIME NULL,
+
+    email_verified BOOLEAN NOT NULL DEFAULT FALSE,
+
     last_login_at TIMESTAMP NULL,
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -62,7 +67,6 @@ CREATE TABLE users (
         ON DELETE RESTRICT
         ON UPDATE CASCADE
 );
-
 
 -- ============================================================
 -- 3. PERMISSIONS

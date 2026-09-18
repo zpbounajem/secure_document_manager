@@ -390,6 +390,154 @@ BEGIN
     WHERE id = p_user_id;
 END$$
 
+DROP PROCEDURE IF EXISTS sp_set_verification_code$$
+
+CREATE PROCEDURE sp_set_verification_code(
+    IN p_user_id INT UNSIGNED,
+    IN p_verification_code VARCHAR(6),
+    IN p_expires_at DATETIME
+)
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM users
+        WHERE id = p_user_id
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'User not found';
+    END IF;
+
+    IF p_verification_code IS NULL
+       OR TRIM(p_verification_code) = '' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Verification code cannot be empty';
+    END IF;
+
+    IF CHAR_LENGTH(TRIM(p_verification_code)) <> 6 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Verification code must contain 6 digits';
+    END IF;
+
+    IF p_expires_at IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Verification code expiration is required';
+    END IF;
+
+    UPDATE users
+    SET
+        verification_code = TRIM(p_verification_code),
+        verification_code_expires_at = p_expires_at,
+        email_verified = FALSE
+    WHERE id = p_user_id;
+END$$
+
+
+DROP PROCEDURE IF EXISTS sp_get_verification_code$$
+
+CREATE PROCEDURE sp_get_verification_code(
+    IN p_email VARCHAR(255)
+)
+BEGIN
+    SELECT
+        id,
+        email,
+        verification_code,
+        verification_code_expires_at,
+        email_verified
+    FROM users
+    WHERE LOWER(email) = LOWER(TRIM(p_email));
+END$$
+
+
+DROP PROCEDURE IF EXISTS sp_verify_email_code$$
+
+CREATE PROCEDURE sp_verify_email_code(
+    IN p_email VARCHAR(255),
+    IN p_verification_code VARCHAR(6)
+)
+BEGIN
+    DECLARE v_user_id INT UNSIGNED;
+    DECLARE v_stored_code VARCHAR(6);
+    DECLARE v_expires_at DATETIME;
+    DECLARE v_email_verified BOOLEAN;
+
+    SELECT
+        id,
+        verification_code,
+        verification_code_expires_at,
+        email_verified
+    INTO
+        v_user_id,
+        v_stored_code,
+        v_expires_at,
+        v_email_verified
+    FROM users
+    WHERE LOWER(email) = LOWER(TRIM(p_email))
+    LIMIT 1;
+
+    IF v_user_id IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'User not found';
+    END IF;
+
+    IF v_email_verified = TRUE THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Email is already verified';
+    END IF;
+
+    IF v_stored_code IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'No verification code found';
+    END IF;
+
+    IF v_expires_at IS NULL OR v_expires_at < CURRENT_TIMESTAMP THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Verification code has expired';
+    END IF;
+
+    IF v_stored_code <> TRIM(p_verification_code) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Invalid verification code';
+    END IF;
+
+    UPDATE users
+    SET
+        email_verified = TRUE,
+        verification_code = NULL,
+        verification_code_expires_at = NULL
+    WHERE id = v_user_id;
+
+    SELECT
+        id AS user_id,
+        email,
+        email_verified
+    FROM users
+    WHERE id = v_user_id;
+END$$
+
+
+DROP PROCEDURE IF EXISTS sp_clear_verification_code$$
+
+CREATE PROCEDURE sp_clear_verification_code(
+    IN p_user_id INT UNSIGNED
+)
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM users
+        WHERE id = p_user_id
+    ) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'User not found';
+    END IF;
+
+    UPDATE users
+    SET
+        verification_code = NULL,
+        verification_code_expires_at = NULL
+    WHERE id = p_user_id;
+END$$
+
 
 /* ============================================================
    3. PERMISSIONS

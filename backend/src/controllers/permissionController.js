@@ -1,3 +1,4 @@
+
 const permissionService = require('../services/permissionService');
 
 
@@ -18,7 +19,7 @@ const createPermission = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Create permission error:', error.message);
+        console.error('Create permission error:', error);
 
         return res.status(500).json({
             success: false,
@@ -39,7 +40,7 @@ const getAllPermissions = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get all permissions error:', error.message);
+        console.error('Get all permissions error:', error);
 
         return res.status(500).json({
             success: false,
@@ -67,7 +68,7 @@ const assignPermissionToRole = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Assign permission error:', error.message);
+        console.error('Assign permission error:', error);
 
         return res.status(500).json({
             success: false,
@@ -95,7 +96,7 @@ const removePermissionFromRole = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Remove permission error:', error.message);
+        console.error('Remove permission error:', error);
 
         return res.status(500).json({
             success: false,
@@ -120,7 +121,7 @@ const getRolePermissions = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get role permissions error:', error.message);
+        console.error('Get role permissions error:', error);
 
         return res.status(500).json({
             success: false,
@@ -137,3 +138,4 @@ module.exports = {
     removePermissionFromRole,
     getRolePermissions
 };
+

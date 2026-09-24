@@ -5,7 +5,10 @@ const getCurrentUser = async (req, res) => {
     try {
         const firebaseUid = req.user.uid;
 
-        const user = await userService.getUserByFirebaseUid(firebaseUid);
+        const user =
+            await userService.getUserByFirebaseUid(
+                firebaseUid
+            );
 
         if (!user) {
             return res.status(404).json({
@@ -20,11 +23,64 @@ const getCurrentUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get current user error:', error.message);
+        console.error(
+            'Get current user error:',
+            error.message
+        );
 
         return res.status(500).json({
             success: false,
             message: 'Failed to get current user'
+        });
+    }
+};
+
+
+// Login user
+const loginUser = async (req, res) => {
+    try {
+        const firebaseUid = req.user.uid;
+
+        const user =
+            await userService.getUserByFirebaseUid(
+                firebaseUid
+            );
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User profile not found'
+            });
+        }
+
+        if (user.status !== 'active') {
+            return res.status(403).json({
+                success: false,
+                message:
+                    `Your account is ${user.status}. Please contact an administrator.`
+            });
+        }
+
+        const updatedUser =
+            await userService.updateLastLogin(
+                user.id
+            );
+
+        return res.status(200).json({
+            success: true,
+            message: 'Login successful',
+            user: updatedUser || user
+        });
+
+    } catch (error) {
+        console.error(
+            'Login user error:',
+            error.message
+        );
+
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to complete login'
         });
     }
 };
@@ -35,7 +91,10 @@ const getUserById = async (req, res) => {
     try {
         const userId = req.params.id;
 
-        const user = await userService.getUserById(userId);
+        const user =
+            await userService.getUserById(
+                userId
+            );
 
         if (!user) {
             return res.status(404).json({
@@ -50,7 +109,10 @@ const getUserById = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get user error:', error.message);
+        console.error(
+            'Get user error:',
+            error.message
+        );
 
         return res.status(500).json({
             success: false,
@@ -63,7 +125,8 @@ const getUserById = async (req, res) => {
 // Get all users
 const getAllUsers = async (req, res) => {
     try {
-        const users = await userService.getAllUsers();
+        const users =
+            await userService.getAllUsers();
 
         return res.status(200).json({
             success: true,
@@ -71,7 +134,10 @@ const getAllUsers = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Get all users error:', error.message);
+        console.error(
+            'Get all users error:',
+            error.message
+        );
 
         return res.status(500).json({
             success: false,
@@ -115,15 +181,16 @@ const createUser = async (req, res) => {
             });
         }
 
-        const user = await userService.createUser({
-            firebaseUid,
-            email,
-            firstName,
-            lastName,
-            displayName,
-            profileImage,
-            roleId: 2
-        });
+        const user =
+            await userService.createUser({
+                firebaseUid,
+                email,
+                firstName,
+                lastName,
+                displayName,
+                profileImage,
+                roleId: 2
+            });
 
         return res.status(201).json({
             success: true,
@@ -158,14 +225,15 @@ const updateUser = async (req, res) => {
             profileImage
         } = req.body;
 
-        const user = await userService.updateUser({
-            userId,
-            email,
-            firstName,
-            lastName,
-            displayName,
-            profileImage
-        });
+        const user =
+            await userService.updateUser({
+                userId,
+                email,
+                firstName,
+                lastName,
+                displayName,
+                profileImage
+            });
 
         return res.status(200).json({
             success: true,
@@ -174,7 +242,10 @@ const updateUser = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Update user error:', error.message);
+        console.error(
+            'Update user error:',
+            error.message
+        );
 
         return res.status(500).json({
             success: false,
@@ -190,10 +261,11 @@ const updateUserRole = async (req, res) => {
         const userId = req.params.id;
         const { roleId } = req.body;
 
-        const user = await userService.updateUserRole(
-            userId,
-            roleId
-        );
+        const user =
+            await userService.updateUserRole(
+                userId,
+                roleId
+            );
 
         return res.status(200).json({
             success: true,
@@ -202,7 +274,10 @@ const updateUserRole = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Update user role error:', error.message);
+        console.error(
+            'Update user role error:',
+            error.message
+        );
 
         return res.status(500).json({
             success: false,
@@ -218,10 +293,11 @@ const updateUserStatus = async (req, res) => {
         const userId = req.params.id;
         const { status } = req.body;
 
-        const user = await userService.updateUserStatus(
-            userId,
-            status
-        );
+        const user =
+            await userService.updateUserStatus(
+                userId,
+                status
+            );
 
         return res.status(200).json({
             success: true,
@@ -230,7 +306,10 @@ const updateUserStatus = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Update user status error:', error.message);
+        console.error(
+            'Update user status error:',
+            error.message
+        );
 
         return res.status(500).json({
             success: false,
@@ -245,7 +324,10 @@ const updateLastLogin = async (req, res) => {
     try {
         const userId = req.params.id;
 
-        const user = await userService.updateLastLogin(userId);
+        const user =
+            await userService.updateLastLogin(
+                userId
+            );
 
         return res.status(200).json({
             success: true,
@@ -254,7 +336,10 @@ const updateLastLogin = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Update last login error:', error.message);
+        console.error(
+            'Update last login error:',
+            error.message
+        );
 
         return res.status(500).json({
             success: false,
@@ -266,6 +351,7 @@ const updateLastLogin = async (req, res) => {
 
 module.exports = {
     getCurrentUser,
+    loginUser,
     getUserById,
     getAllUsers,
     createUser,

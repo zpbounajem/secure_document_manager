@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:secure_document_manager/core/constants/app_colors.dart';
+import 'package:secure_document_manager/features/auth/data/services/auth_service.dart';
+
 import '../widgets/auth_button.dart';
 import '../widgets/auth_footer.dart';
 import '../widgets/auth_header.dart';
@@ -10,12 +12,17 @@ class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  State<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _ForgotPasswordScreenState
+    extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
+
   final _emailController = TextEditingController();
+
+  final AuthService _authService = AuthService();
 
   bool _isLoading = false;
 
@@ -50,23 +57,42 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       _isLoading = true;
     });
 
-    // Firebase password reset will be connected here later.
+    try {
+      await _authService.resetPassword(
+        email: _emailController.text.trim(),
+      );
 
-    await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
 
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Password reset link sent successfully.',
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Password reset link sent successfully. Please check your email.',
+          ),
         ),
-      ),
-    );
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst(
+              'Exception: ',
+              '',
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _goToLogin() {

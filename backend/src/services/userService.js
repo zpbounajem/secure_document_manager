@@ -22,8 +22,9 @@ const createUser = async ({
         ]
     );
 
-    return result[0][0] || null;
+    return result?.[0]?.[0] || null;
 };
+
 
 const getUserById = async (userId) => {
     const [result] = await pool.query(
@@ -31,8 +32,9 @@ const getUserById = async (userId) => {
         [userId]
     );
 
-    return result[0][0] || null;
+    return result?.[0]?.[0] || null;
 };
+
 
 const getUserByFirebaseUid = async (firebaseUid) => {
     const [result] = await pool.query(
@@ -40,16 +42,18 @@ const getUserByFirebaseUid = async (firebaseUid) => {
         [firebaseUid]
     );
 
-    return result[0][0] || null;
+    return result?.[0]?.[0] || null;
 };
+
 
 const getAllUsers = async () => {
     const [result] = await pool.query(
         'CALL sp_get_all_users()'
     );
 
-    return result[0];
+    return result?.[0] || [];
 };
+
 
 const updateUser = async ({
     userId,
@@ -71,8 +75,9 @@ const updateUser = async ({
         ]
     );
 
-    return result[0][0] || null;
+    return result?.[0]?.[0] || null;
 };
+
 
 const updateUserRole = async (userId, roleId) => {
     const [result] = await pool.query(
@@ -80,8 +85,9 @@ const updateUserRole = async (userId, roleId) => {
         [userId, roleId]
     );
 
-    return result[0][0] || null;
+    return result?.[0]?.[0] || null;
 };
+
 
 const updateUserStatus = async (userId, status) => {
     const [result] = await pool.query(
@@ -89,8 +95,9 @@ const updateUserStatus = async (userId, status) => {
         [userId, status]
     );
 
-    return result[0][0] || null;
+    return result?.[0]?.[0] || null;
 };
+
 
 const updateLastLogin = async (userId) => {
     const [result] = await pool.query(
@@ -98,8 +105,9 @@ const updateLastLogin = async (userId) => {
         [userId]
     );
 
-    return result[0][0] || null;
+    return result?.[0]?.[0] || null;
 };
+
 
 module.exports = {
     createUser,

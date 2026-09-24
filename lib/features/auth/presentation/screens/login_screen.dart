@@ -1,6 +1,9 @@
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:secure_document_manager/core/constants/app_colors.dart';
+import 'package:secure_document_manager/features/auth/data/services/auth_api_service.dart';
 import 'package:secure_document_manager/features/auth/data/services/auth_service.dart';
 import 'package:secure_document_manager/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:secure_document_manager/features/auth/presentation/screens/signup_screen.dart';
@@ -26,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  final AuthApiService _authApiService = AuthApiService();
   final AuthService _authService = AuthService();
 
   bool _obscurePassword = true;
@@ -67,6 +71,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    if (_isLoading) {
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -76,12 +84,35 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await _authService.login(
+      final User? user = await _authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
-      if (!mounted) return;
+      if (user == null) {
+        throw Exception('Unable to log in.');
+      }
+
+      final String? idToken =
+          await _authService.getIdToken();
+
+      if (idToken == null) {
+        throw Exception(
+          'Unable to authenticate with the server.',
+        );
+      }
+
+      final userData = await _authApiService.login(
+        idToken: idToken,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      debugPrint(
+        'LOGIN SUCCESS: $userData',
+      );
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -89,35 +120,133 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
 
-      // We will navigate to the dashboard here next.
+      // Dashboard navigation will be added here.
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
+            e.toString().replaceFirst(
+              'Exception: ',
+              '',
+            ),
           ),
         ),
       );
     } finally {
-      if (!mounted) return;
-
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  void _loginWithGoogle() {
-    // Google Authentication will be connected here.
+  Future<void> _loginWithGoogle() async {
+    if (_isLoading) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      debugPrint(
+        'GOOGLE LOGIN: Starting Google Sign-In...',
+      );
+
+      final User? user =
+          await _authService.signInWithGoogle();
+
+      if (!mounted) {
+        return;
+      }
+
+      if (user == null) {
+        debugPrint(
+          'GOOGLE LOGIN: User cancelled Google Sign-In.',
+        );
+        return;
+      }
+
+      debugPrint(
+        'GOOGLE LOGIN: Firebase user = ${user.uid}',
+      );
+
+      final String? idToken =
+          await _authService.getIdToken();
+
+      if (idToken == null) {
+        throw Exception(
+          'Unable to get Firebase authentication token.',
+        );
+      }
+
+      debugPrint(
+        'GOOGLE LOGIN: Firebase ID token received.',
+      );
+
+      final userData = await _authApiService.login(
+        idToken: idToken,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      debugPrint(
+        'GOOGLE LOGIN SUCCESS: $userData',
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Google login successful!'),
+        ),
+      );
+
+      // Dashboard navigation will be added here.
+    } catch (e, stackTrace) {
+      debugPrint(
+        'GOOGLE LOGIN ERROR: $e',
+      );
+
+      debugPrint(
+        'GOOGLE LOGIN STACK TRACE: $stackTrace',
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst(
+              'Exception: ',
+              '',
+            ),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _forgotPassword() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const ForgotPasswordScreen(),
+        builder: (context) =>
+            const ForgotPasswordScreen(),
       ),
     );
   }
@@ -126,7 +255,8 @@ class _LoginScreenState extends State<LoginScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const SignupScreen(),
+        builder: (context) =>
+            const SignupScreen(),
       ),
     );
   }
@@ -167,7 +297,9 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: AppColors.purple.withValues(alpha: 0.10),
+            color: AppColors.purple.withValues(
+              alpha: 0.10,
+            ),
             blurRadius: 35,
             offset: const Offset(0, 15),
           ),
@@ -180,7 +312,8 @@ class _LoginScreenState extends State<LoginScreen> {
           children: [
             const AuthHeader(
               title: 'Welcome Back',
-              subtitle: 'Sign in to access your secure documents.',
+              subtitle:
+                  'Sign in to access your secure documents.',
             ),
 
             const SizedBox(height: 32),
@@ -190,7 +323,8 @@ class _LoginScreenState extends State<LoginScreen> {
               hintText: 'Enter your email',
               prefixIcon: Icons.email_outlined,
               controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
+              keyboardType:
+                  TextInputType.emailAddress,
               validator: _validateEmail,
             ),
 
@@ -201,7 +335,8 @@ class _LoginScreenState extends State<LoginScreen> {
               obscureText: _obscurePassword,
               onToggleVisibility: () {
                 setState(() {
-                  _obscurePassword = !_obscurePassword;
+                  _obscurePassword =
+                      !_obscurePassword;
                 });
               },
               validator: _validatePassword,
@@ -214,7 +349,8 @@ class _LoginScreenState extends State<LoginScreen> {
               child: TextButton(
                 onPressed: _forgotPassword,
                 style: TextButton.styleFrom(
-                  foregroundColor: AppColors.purple,
+                  foregroundColor:
+                      AppColors.purple,
                   padding: EdgeInsets.zero,
                 ),
                 child: const Text(
@@ -256,7 +392,8 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 28),
 
             AuthFooter(
-              message: "Don't have an account?",
+              message:
+                  "Don't have an account?",
               actionText: 'Sign Up',
               onActionPressed: _goToRegister,
             ),
@@ -313,7 +450,9 @@ class _LoginScreenState extends State<LoginScreen> {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.35),
+        color: color.withValues(
+          alpha: 0.35,
+        ),
         shape: BoxShape.circle,
       ),
     );

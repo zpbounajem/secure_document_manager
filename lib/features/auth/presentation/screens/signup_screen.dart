@@ -232,9 +232,119 @@ class _SignupScreenState extends State<SignupScreen> {
   }
 }
   
-  void _signupWithGoogle() {
-    // Google Authentication will be connected here.
+
+Future<void> _signupWithGoogle() async {
+  if (_isLoading) {
+    return;
   }
+
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
+    debugPrint('GOOGLE SIGNUP: Starting Google Sign-In...');
+
+    final user = await _authService.signInWithGoogle();
+
+    if (!mounted) {
+      return;
+    }
+
+    if (user == null) {
+      debugPrint('GOOGLE SIGNUP: User cancelled Google Sign-In.');
+      return;
+    }
+
+    debugPrint(
+      'GOOGLE SIGNUP: Firebase user = ${user.uid}',
+    );
+
+    final String? idToken =
+        await _authService.getIdToken();
+
+    if (idToken == null) {
+      throw Exception(
+        'Unable to get Firebase authentication token.',
+      );
+    }
+
+    debugPrint(
+      'GOOGLE SIGNUP: Firebase ID token received.',
+    );
+
+    final String displayName =
+        user.displayName?.trim() ?? '';
+
+    final List<String> nameParts =
+        displayName.isEmpty
+            ? ['Google', 'User']
+            : displayName.split(RegExp(r'\s+'));
+
+    final String firstName = nameParts.first;
+
+    final String lastName =
+        nameParts.length > 1
+            ? nameParts.sublist(1).join(' ')
+            : '';
+
+    debugPrint(
+      'GOOGLE SIGNUP: Creating MySQL user...',
+    );
+
+    await _authApiService.createUser(
+      idToken: idToken,
+      firstName: firstName,
+      lastName: lastName,
+      displayName: displayName.isEmpty
+          ? user.email ?? 'Google User'
+          : displayName,
+    );
+
+    debugPrint(
+      'GOOGLE SIGNUP: MySQL user created.',
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Google account created successfully.',
+        ),
+      ),
+    );
+
+    Navigator.pop(context);
+  } catch (e, stackTrace) {
+    debugPrint('GOOGLE SIGNUP ERROR: $e');
+    debugPrint('STACK TRACE: $stackTrace');
+
+    if (!mounted) {
+      return;
+    }
+
+    final String message = e.toString().replaceFirst(
+      'Exception: ',
+      '',
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+}
+
 
   void _goToLogin() {
     Navigator.pop(context);
